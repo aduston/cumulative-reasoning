@@ -8,7 +8,6 @@ import time
 import numpy
 from tqdm import tqdm
 import os
-os.environ["OPENAI_API_KEY"] = 'sk-...'
 
 TRY_CNT = 16
 
@@ -57,15 +56,30 @@ gen_proposition_examples = [
     {'premises': 'All eels are fish. No fish are plants. ',
      'proposition': 'No eels are plants.',
      'conclusion': 'Sea eel is an eel.',
-     'explanation': 'This expression is deduced from the two premises as follows: if x is an eel, then it is a fish (from Premise 1), and if it is a fish, then it is not a plant (from Premise 2). Thus, if x is an eel, then it is not a plant.'},
+     'explanation': ('This expression is deduced from the two premises as '
+                     'follows: if x is an eel, then it is a fish '
+                     '(from Premise 1), and if it is a fish, then it is '
+                     'not a plant (from Premise 2). Thus, if x is an eel, '
+                     'then it is not a plant.')},
     {'premises': 'All eels are fish. A thing is either a plant or animal.',
      'proposition': 'All eels are animals.',
      'conclusion': 'Sea eel is an eel.',
-     'explanation': 'This statement follows from the premises as follows: If x is an eel, then it is a fish (from Premise 1). If x is a thing (which includes being a fish, hence an eel), then it is either a plant or an animal (from Premise 2). Since it cannot be a plant (because it is a fish and no fish is a plant), it must be an animal. Thus, if x is an eel, it is an animal.'},
+     'explanation': ('This statement follows from the premises as follows: '
+                     'If x is an eel, then it is a fish (from Premise 1). '
+                     'If x is a thing (which includes being a fish, hence an eel), '
+                     'then it is either a plant or an animal (from Premise 2). '
+                     'Since it cannot be a plant (because it is a fish and no fish '
+                     'is a plant), it must be an animal. Thus, if x is an eel, it '
+                     'is an animal.')},
     {'premises': 'A thing is either a plant or animal. All animals breathe.',
      'proposition': 'All things that breathe are animals.',
      'conclusion': 'Sea eel is an eel.',
-     'explanation': 'This statement is deduced from the premises as follows: If x is a thing, then it is either a plant or an animal (from Premise 1), and if x is an animal, then it breathes (from Premise 2). Therefore, if a thing breathes, it must be an animal, because it can not be a plant that breathes based on these premises.'}
+     'explanation': ('This statement is deduced from the premises as follows: '
+                     'If x is a thing, then it is either a plant or an animal '
+                     '(from Premise 1), and if x is an animal, then it breathes '
+                     '(from Premise 2). Therefore, if a thing breathes, it must '
+                     'be an animal, because it can not be a plant that breathes '
+                     'based on these premises.')}
 ]
 
 validate_deduction_examples = [
@@ -419,21 +433,33 @@ def main():
         if args.verbose: print("[Premises]: \t", premises)
         if args.verbose: print("[Hypothesis]: \t", conclusion)
 
+        # default values: args.propnum = 2, args.trycnt = 16
         while (len(propositions) < args.propnum and failed_cnt < args.trycnt):
             failed_cnt += 1
 
             if args.verbose: print("\t# <No. {}>".format(len(propositions) + 1))
 
-            # args.exploration_prob determines the probability of using premises + propositions as the input of gen_proposition
+            # args.exploration_prob determines the probability of using premises + 
+            # propositions as the input of gen_proposition
             if numpy.random.rand() < args.exploration_prob:
-                tmp = numpy.random.choice(premises + propositions, size=min(len(premises + propositions), args.choices), replace=False)
-            else: tmp = numpy.random.choice(premises, size=min(len(premises), args.choices), replace=False)
+                tmp = numpy.random.choice(
+                    premises + propositions, 
+                    size=min(len(premises + propositions), args.choices), 
+                    replace=False)
+            else: tmp = numpy.random.choice(
+                premises, 
+                size=min(len(premises), args.choices), 
+                replace=False)
 
             # generate propositions
             try_cnt = 0
             while try_cnt < TRY_CNT:
                 try:
-                    t = gen_proposition(examples=gen_proposition_examples, premises=' '.join(tmp), conclusion=conclusion, temperature=args.temperature)
+                    t = gen_proposition(
+                        examples=gen_proposition_examples, 
+                        premises=' '.join(tmp), 
+                        conclusion=conclusion, 
+                        temperature=args.temperature)
                     break
                 except Exception as e:
                     print("gen_proposition() failed, try again... (No. {})".format(try_cnt+1), "Error:", e)
@@ -464,7 +490,15 @@ def main():
             # is something to be deduced
             is_something_selection = 'False'
             # if prop begin with 'There is no' or 'No valid' or 'None of the' , then skip
-            if prop.startswith('There is no') or prop.startswith('There are no') or prop.startswith('No valid') or prop.startswith('None of the') or 'no information' in prop or 'No information' in prop or 'No direct' in prop or 'No proposition' in prop or 'It is not possible to' in prop or 'the correctness of the hypothesis' in prop:
+            if prop.startswith('There is no') or \
+                prop.startswith('There are no') or \
+                prop.startswith('No valid') or \
+                prop.startswith('None of the') or \
+                'no information' in prop or \
+                'No information' in prop or \
+                'No direct' in prop or \
+                'No proposition' in prop or \
+                'It is not possible to' in prop or 'the correctness of the hypothesis' in prop:
                 if args.verbose: print("\t\t[Deduced something]:\t", is_something_selection)
                 continue
 
